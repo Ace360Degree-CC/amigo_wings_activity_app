@@ -28,11 +28,22 @@ class _UploadDataScreenState extends State<UploadDataScreen> {
     if (await file.exists()) {
       String content = await file.readAsString();
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
+
       setState(() {
-        _students = rows.map((row) => row.map((cell) => cell.toString()).toList()).toList();
+        _students = rows.map((row) {
+          // ✅ Ensure at least 9 columns exist
+          if (row.length < 9) {
+            print("❌ ERROR: Incorrect data format in CSV: $row");
+            return List<String>.filled(9, "");  // Fallback empty row
+          }
+          return row.map((cell) => cell.toString()).toList();
+        }).toList();
       });
+
+      print("✅ Loaded Data: $_students");
     }
   }
+
 
   /// ✅ Upload data to server
   Future<void> _uploadData() async {
@@ -42,14 +53,21 @@ class _UploadDataScreenState extends State<UploadDataScreen> {
     }
 
     for (var row in _students) {
+      if (row.length < 9) {
+        print("❌ ERROR: Skipping row due to incorrect format: $row");
+        continue;  // ✅ Skip improperly formatted rows
+      }
+
       Map<String, String> payload = {
-        'name': row[0],
-        'phone_1': row[1],
-        'phone_2': row[2],
-        'college': row[3],
-        'location': row[4],
-        'stream': row[5],
-        'created_date': row[6],
+        'student_id': row[0],  // ✅ Send student ID
+        'branch_id': row[1],   // ✅ Send branch ID
+        'name': row[2],
+        'phone_1': row[3],
+        'phone_2': row[4],
+        'college': row[5],
+        'location': row[6],
+        'stream': row[7],
+        'created_date': row[8],
         'status': "1"
       };
 
@@ -83,6 +101,7 @@ class _UploadDataScreenState extends State<UploadDataScreen> {
     print("✅ All data uploaded and local file deleted!");
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,8 +115,8 @@ class _UploadDataScreenState extends State<UploadDataScreen> {
               itemCount: _students.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(_students[index][0]), // Name
-                  subtitle: Text("Phone: ${_students[index][1]}"),
+                  title: Text("Student Name: ${_students[index][2]}"), // Name
+                  subtitle: Text("Phone: ${_students[index][3]}"),
                 );
               },
             ),

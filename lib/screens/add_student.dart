@@ -53,13 +53,17 @@ class _AddStudentState extends State<AddStudent> {
     String phone2 = phone2Controller.text.trim();
     String location = locationController.text.trim();
     String streamValue = stream == Streams.arts ? "Arts" : stream == Streams.commerce ? "Commerce" : "Science";
+    String studentId = ApiServices.studentId.trim();  // ✅ Ensure no blank spaces
+    String branchId = ApiServices.branch.trim();  // ✅ Ensure no blank spaces
 
-    if (studentName.isEmpty || collegeName.isEmpty || phone1.isEmpty || location.isEmpty) {
+    if (studentId.isEmpty || branchId.isEmpty || studentName.isEmpty || collegeName.isEmpty || phone1.isEmpty || location.isEmpty) {
       print("❌ ERROR: Required fields are missing!");
       return;
     }
 
     List<String> row = [
+      studentId,   // ✅ Ensure `student_id` is first
+      branchId,    // ✅ Ensure `branch_id` is second
       studentName,
       phone1,
       phone2,
@@ -69,27 +73,26 @@ class _AddStudentState extends State<AddStudent> {
       formattedDate,
     ];
 
-    // ✅ Get directory to store the CSV file
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/students.csv');
 
     List<List<String>> data = [];
 
-    // ✅ If file exists, load previous data
     if (await file.exists()) {
       String content = await file.readAsString();
       List<List<dynamic>> rows = const CsvToListConverter().convert(content);
       data = rows.map((row) => row.map((cell) => cell.toString()).toList()).toList();
     }
 
-    data.add(row); // ✅ Add new entry
+    data.add(row);
     String csv = const ListToCsvConverter().convert(data);
-
-    await file.writeAsString(csv); // ✅ Save to file
+    await file.writeAsString(csv);
 
     print("✅ Student data saved locally: ${file.path}");
     showSuccessModal();
   }
+
+
   /// ✅ Fetch available colleges from API
   Future<void> fetchCollege() async {
     try {
