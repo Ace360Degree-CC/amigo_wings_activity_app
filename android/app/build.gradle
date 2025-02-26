@@ -31,7 +31,7 @@ android {
 
     compileSdkVersion 34  // Use the latest stable SDK version
 
-    ndkVersion '23.1.7779620'  // Update as needed
+    ndkVersion '25.1.8937393'  // Update as needed
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

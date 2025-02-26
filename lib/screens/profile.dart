@@ -6,6 +6,9 @@ import '../shared_preferences/user_status.dart';
 import '../widgets/custom_container.dart';
 import 'login.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
@@ -24,20 +27,58 @@ class _ProfileState extends State<Profile> {
     loadUserData();
   }
 
+  Future<Result> fetchData(String phone) async {
+    print('Fetching data for phone: $phone'); // ✅ Debugging output
+
+    var uri =
+        "https://nationalskillprogram.com/amigo_lead_generation/sign_in2.php?phone=${phone}&otp=1234";
+
+    var response = await http.get(Uri.parse(uri));
+
+    if (response.statusCode == 200) {
+      var result = json.decode(response.body)['result'][0];
+      // print("Fetched User Data: $result"); // ✅ Debugging output
+      return Result.fromJson(result);
+    } else {
+      throw Exception("Failed to load data");
+    }
+  }
+
   Future<void> loadUserData() async {
-    String? storedPhone =
-        await UserStatus().getPhoneNumber(); // ✅ Retrieve stored phone
+    String? storedPhone = await UserStatus().getPhoneNumber();
     if (storedPhone != null) {
       setState(() {
         phone = storedPhone;
-        loadUserData(); // ✅ Load user data using the fetched phone number
+        isLoading = true; // ✅ Show loader while fetching data
       });
+
+      try {
+        final result = await fetchData(phone!); // ✅ Wait for data
+        if (mounted) {
+          setState(() {
+            userData = result;
+            isLoading = false; // ✅ Stop loader after fetching
+          });
+        }
+      } catch (e) {
+        print("Error fetching user data: $e");
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      }
     } else {
       print("No phone number found, redirecting to login...");
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Login()));
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => const Login()));
+        });
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

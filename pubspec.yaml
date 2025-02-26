@@ -26,6 +26,8 @@ dependencies:
   searchfield: ^0.7.8
   shared_preferences: ^2.0.17
   toast: ^0.3.0
+  csv:
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_lints: ^5.0.0

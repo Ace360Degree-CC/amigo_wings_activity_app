@@ -1,12 +1,12 @@
 import 'package:amigo_academy/api_services/api_service.dart';
+import 'package:amigo_academy/main.dart';
 import 'package:amigo_academy/model/user_model.dart';
 import 'package:amigo_academy/screens/lead.dart';
 import 'package:amigo_academy/screens/login.dart';
 import 'package:amigo_academy/screens/profile.dart';
+import 'package:amigo_academy/screens/uploadDataScreen.dart';
 import 'package:amigo_academy/shared_preferences/user_status.dart';
-
 import 'package:flutter/material.dart';
-
 import 'add_student.dart';
 
 class Home extends StatefulWidget {
@@ -17,116 +17,153 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  List<String> titles = ['Home', 'Profile', 'Add Lead'];
-  List<IconData> icons = [Icons.home, Icons.person, Icons.add_box];
-  late Future<Result> futureResults;
+  List<String> titles = ['Home', 'Profile', 'Add Lead', 'Upload Data'];
+  List<IconData> icons = [Icons.home, Icons.person, Icons.add_box, Icons.cloud_upload];
+
+  Future<Result>? futureResults;
+  int selected = 0; // Track selected sidebar item
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadUserPhoneNumber();
-
-    // futureResults = ApiServices().fetchData(9004266110);
   }
 
+  /// ✅ Loads user phone number and fetches data
   Future<void> _loadUserPhoneNumber() async {
-    String? phone =
-        await UserStatus().getPhoneNumber(); // ✅ Retrieve stored phone number
+    String? phone = await UserStatus().getPhoneNumber();
     if (phone != null) {
-      setState(() {
-        futureResults =
-            ApiServices().fetchData(phone); // ✅ Use dynamic phone number
-      });
+      if (mounted) {
+        setState(() {
+          futureResults = ApiServices().fetchData(phone);
+        });
+      }
     } else {
       print("No phone number found, redirecting to login...");
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => Login()));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushReplacement(
+            MaterialPageRoute(builder: (context) => const Login()),
+          );
+        }
+      });
     }
   }
 
-  int selected = 0;
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xffD4000A),
-        title: Text('Lead Achievements'),
+        backgroundColor: const Color(0xffD4000A),
+        title: const Text('Lead Achievements'),
       ),
       drawer: Drawer(
         backgroundColor: Colors.white,
         child: Column(
           children: [
+            /// ✅ Drawer Header
             Container(
               height: 150,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [Colors.grey.shade100, Colors.grey.shade500],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight)),
+                gradient: LinearGradient(
+                  colors: [Colors.grey.shade100, Colors.grey.shade500],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
                     height: 70,
                     width: 140,
-                    decoration: BoxDecoration(
-                        image: DecorationImage(
-                            image: AssetImage('assets/logo.png'))),
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/logo.png'),
+                      ),
+                    ),
                   ),
                   Text(
-                    "Hii, " + ApiServices.name,
-                    style: TextStyle(
+                    "Hii, ${ApiServices.name}",
+                    style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 19),
-                  )
+                  ),
                 ],
               ),
             ),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
+
+            /// ✅ Sidebar Navigation List
             Expanded(
               child: ListView.builder(
-                  itemCount: 3,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      tileColor:
-                          index == 0 ? Colors.grey.shade400 : Colors.white,
-                      onTap: () {
-                        setState(() {
-                          selected = index;
-                        });
-                        Navigator.pop(context);
-                        if (index == 0) {
-                          null;
-                        }
-                        index == 1
-                            ? Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => Profile()))
-                            : null;
+                itemCount: titles.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    tileColor:
+                        selected == index ? Colors.grey.shade400 : Colors.white,
+                    onTap: () {
+                      Navigator.pop(context); // ✅ Ensure drawer closes
 
-                        index == 2
-                            ? Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => AddStudent()))
-                            : null;
-                      },
-                      leading: Icon(icons[index],
-                          color: index == 0 ? Color(0xffD4000A) : Colors.black),
-                      title: Text(
-                        titles[index],
-                        style: TextStyle(
-                            color:
-                                index == 0 ? Color(0xffD4000A) : Colors.black),
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        // if (!mounted) return;
+
+                        if (navigatorKey.currentState != null) {
+                          switch (index) {
+                            case 0:
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(builder: (context) => const Home()),
+                              );
+                              break;
+                            case 1:
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(builder: (context) => const Profile()),
+                              );
+                              break;
+                            case 2:
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(builder: (context) => const AddStudent()),
+                              );
+                              break;
+                            case 3:
+                              navigatorKey.currentState!.push(
+                                MaterialPageRoute(builder: (context) => const UploadDataScreen()),
+                              );
+                              break;
+                          }
+                        }
+                      });
+                    },
+
+
+
+
+
+
+                    leading: Icon(
+                      icons[index],
+                      color: selected == index
+                          ? const Color(0xffD4000A)
+                          : Colors.black,
+                    ),
+                    title: Text(
+                      titles[index],
+                      style: TextStyle(
+                        color: selected == index
+                            ? const Color(0xffD4000A)
+                            : Colors.black,
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
             ),
+
+            /// ✅ Footer Details
             Padding(
               padding: const EdgeInsets.only(left: 18.0, bottom: 10),
               child: Align(
@@ -134,52 +171,59 @@ class HomeState extends State<Home> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text(
-                      "Branch : Andheri",
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "Batch no: 13",
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "Roll no: 1",
-                      style: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                    )
+                    Text("Branch : Andheri",
+                        style: TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold)),
+                    Text("Batch no: 13",
+                        style: TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold)),
+                    Text("Roll no: 1",
+                        style: TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold))
                   ],
                 ),
               ),
             ),
-            const Text('\u00a9 Amigo Academy Pvt. Ltd '),
+            const Text('\u00a9 Amigo Academy Pvt. Ltd'),
           ],
         ),
       ),
-      body: FutureBuilder<Result>(
-          future: futureResults,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              ApiServices.studentId = snapshot.data!.studentId;
-              ApiServices.branch = snapshot.data!.branchId; // ✅ Use 'branchId'
-              ApiServices.batchNo = snapshot.data!.batchNo;
-              ApiServices.name = snapshot.data!.name;
-              ApiServices.email = snapshot.data!.emailId; // ✅ Use 'emailId'
-              ApiServices.rollNO = snapshot.data!.rollNo;
-              ApiServices.course = snapshot.data!.course;
-              ApiServices.MobileNo = snapshot.data!.mobileNo;
-              ApiServices.profilePic =
-                  snapshot.data!.profilePic; // ✅ Profile Picture
-              print(snapshot.data!.studentId);
 
-              return Lead();
-            } else {
-              return Center(
-                child: CircularProgressIndicator(color: Color(0xffD4000A)),
-              );
+      /// ✅ FutureBuilder for API data
+      body: FutureBuilder<Result>(
+        future: futureResults,
+        builder: (context, snapshot) {
+          if (!mounted) return const SizedBox(); // ✅ Prevent UI updates after disposal
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xffD4000A)));
+          } else if (snapshot.hasError) {
+            return const Center(child: Text("Error loading data"));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text("No data available"));
+          } else {
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ApiServices.studentId = snapshot.data!.studentId;
+                  ApiServices.branch = snapshot.data!.branchId;
+                  ApiServices.batchNo = snapshot.data!.batchNo;
+                  ApiServices.name = snapshot.data!.name;
+                  ApiServices.email = snapshot.data!.emailId;
+                  ApiServices.rollNO = snapshot.data!.rollNo;
+                  ApiServices.course = snapshot.data!.course;
+                  ApiServices.MobileNo = snapshot.data!.mobileNo;
+                  ApiServices.profilePic = snapshot.data!.profilePic;
+                  print("Student ID: ${snapshot.data!.studentId}");
+                }
+              });
             }
-          }),
+
+            return const Lead(); // ✅ Ensure navigation is stable
+          }
+        },
+      ),
+
     );
   }
 }

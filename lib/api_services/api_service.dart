@@ -20,21 +20,36 @@ class ApiServices {
   static int otp = 0;
   static String error = '';
   Future<Result> fetchData(String phone) async {
-    print('Fetching data for phone: $phone'); // ✅ Debugging output
+    print('Fetching data for phone: $phone');
 
     var uri =
         "https://nationalskillprogram.com/amigo_lead_generation/sign_in2.php?phone=${phone}&otp=1234";
-
     var response = await http.get(Uri.parse(uri));
 
     if (response.statusCode == 200) {
-      var result = json.decode(response.body)['result'][0];
-      // print("Fetched User Data: $result"); // ✅ Debugging output
-      return Result.fromJson(result);
+      String jsonString = response.body.trim();
+
+      if (jsonString.contains('}{')) {
+        print("⚠️ API returned multiple JSON objects. Fixing format...");
+        jsonString = jsonString.split('}{')[0] + "}"; // ✅ Keep only the first valid JSON
+      }
+
+      try {
+        var parsedData = json.decode(jsonString);
+        if (parsedData['result'] != null && parsedData['result'].isNotEmpty) {
+          return Result.fromJson(parsedData['result'][0]);
+        } else {
+          throw Exception("No data found in response");
+        }
+      } catch (e) {
+        print("❌ JSON Parsing Error: $e");
+        throw Exception("Invalid JSON format");
+      }
     } else {
       throw Exception("Failed to load data");
     }
   }
+
 
   Future<void> sendOtp(phone) async {
     print('otp invoked');
